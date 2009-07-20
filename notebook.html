@@ -17,6 +17,9 @@ function get_selection_range(input) {
     OUTPUT:
         an array of two nonnegative integers
     */
+    // hack:
+    return Array(input.selectionStart, input.selectionEnd);
+    // this is false if selectionStart is zero!!! this needs to be fixed
     if (input.selectionStart) {
         return Array(input.selectionStart, input.selectionEnd);
     } else {
@@ -53,11 +56,46 @@ $.fn.selectRange = function(start, end) {
         });
 };
 
+function focus_next_cell(cell) {
+    var next_cell = cell.parent().next().children("textarea.cell_input");
+    next_cell.focus();
+    next_cell.selectRange(0, 0);
+};
+
+function focus_prev_cell(cell) {
+    var prev_cell = cell.parent().prev().children("textarea.cell_input");
+    prev_cell.focus();
+    prev_cell.selectRange(0, 0);
+};
+
+function insert_cell_before(cell) {
+    cell.parent().before(create_cell());
+};
+
+function insert_cell_after(cell) {
+    cell.parent().after(create_cell());
+};
+
+function join_cells(cell) {
+    var prev_cell = cell.parent().prev().children("textarea.cell_input");
+    if (prev_cell.length == 0) return;
+    if (cell.val() != "") {
+        if (prev_cell.val() != "") {
+            prev_cell.val(prev_cell.val() + "\n" + cell.val());
+        } else {
+            prev_cell.val(cell.val());
+        }
+    }
+    focus_prev_cell(cell);
+    cell.parent().remove()
+};
+
+
 
     var i=1;
     function create_cell() {
-        /* This is a safety catch: */
-        if (i > 10) return;
+        /* This is a safety catch:
+        if (i > 10) return; */
         /* Creates a new cell by cloning the disabled prototype */
         var a = $("#cell_prototype").clone().removeClass("disabled");
         a.children(".prompt").text("In [" + i + "]:");
@@ -67,37 +105,29 @@ $.fn.selectRange = function(start, end) {
         a.children("textarea.cell_input").blur(cell_input_blur);
         a.children("textarea.cell_input").bind('keydown', 'Shift+return',
             function(event) {
-                eval_click(event);
-                var next_cell = $(event.target).parent().next().children("textarea.cell_input");
-                next_cell.focus();
-                next_cell.selectRange(1, 1);
+                event.preventDefault();
+                insert_cell_after($(event.target))
+                focus_next_cell($(event.target));
                 return true;
             });
         a.children("textarea.cell_input").bind('keydown', 'backspace',
             function(event) {
                 if (get_selection_range(event.target)[0] == 0) {
-                    var next_cell = $(event.target).parent().prev().children("textarea.cell_input");
-                    if (next_cell.val() == "") {
-                        next_cell.remove()
-                    } else {
-                        next_cell.focus();
-                        next_cell.selectRange(1, 1);
-                    }
+                    event.preventDefault();
+                    join_cells($(event.target));
                     return true;
                 }
             });
         a.children("textarea.cell_input").bind('keydown', 'up',
             function(event) {
-                var next_cell = $(event.target).parent().prev().children("textarea.cell_input");
-                next_cell.focus();
-                next_cell.selectRange(1, 1);
+                event.preventDefault();
+                focus_prev_cell($(event.target));
                 return true;
             });
         a.children("textarea.cell_input").bind('keydown', 'down',
             function(event) {
-                var next_cell = $(event.target).parent().next().children("textarea.cell_input");
-                next_cell.focus();
-                next_cell.selectRange(1, 1);
+                event.preventDefault();
+                focus_next_cell($(event.target));
                 return true;
             });
         i += 1;
@@ -107,12 +137,12 @@ $.fn.selectRange = function(start, end) {
         /* Gets called whenever the the "insert new cell" blue area is clicked,
            so this puts the new cell above the current one */
         event.preventDefault();
-        $(event.target).parent().before(create_cell());
+        insert_cell_before($(event.target))
     };
     function eval_click(event) {
         /* Gets called whenever the "evaluate" link is clicked */
         event.preventDefault();
-        $(event.target).parent().after(create_cell());
+        insert_cell_after($(event.target))
     };
     function cell_input_focus(event) {
         /* Gets called whenever the user "gets into" the cell */
@@ -128,7 +158,8 @@ $.fn.selectRange = function(start, end) {
         $(event.target).removeClass("cell_input_active").addClass("cell_input")
     };
 $(document).ready(function(){
-    $("#cell_prototype").after(create_cell());
+    insert_cell_after($("#cell_prototype"))
+    focus_next_cell($("#cell_prototype"));
 });
 </script>
 <style type="text/css">
