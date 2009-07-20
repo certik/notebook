@@ -17,10 +17,8 @@ function get_selection_range(input) {
     OUTPUT:
         an array of two nonnegative integers
     */
-    // hack:
-    return Array(input.selectionStart, input.selectionEnd);
-    // this is false if selectionStart is zero!!! this needs to be fixed
-    if (input.selectionStart) {
+    // If the attribute input.selectionStart is present, use that:
+    if (input.selectionStart || input.selectionStart == 0) {
         return Array(input.selectionStart, input.selectionEnd);
     } else {
         var start, end;
@@ -66,6 +64,7 @@ function focus_next_cell(cell) {
 function focus_prev_cell(cell) {
     var prev_cell = cell.parent().prev().children("textarea.cell_input");
     if (prev_cell.length == 0) return;
+    if (prev_cell.parent().attr("class") == "disabled") return;
     prev_cell.focus();
     prev_cell.selectRange(0, 0);
 };
