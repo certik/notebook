@@ -18,7 +18,7 @@ function get_selection_range(input) {
         an array of two nonnegative integers
     */
     // hack:
-    return Array(input.selectionStart, input.selectionEnd);
+    //return Array(input.selectionStart, input.selectionEnd);
     // this is false if selectionStart is zero!!! this needs to be fixed
     if (input.selectionStart) {
         return Array(input.selectionStart, input.selectionEnd);
